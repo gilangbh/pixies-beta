@@ -19,9 +19,10 @@ namespace pixies_nft_console
         {
             Console.WriteLine("Generating Pixies!");
             string directory = @"C:\side\pixies-nft\assets\";
+            string blankfilePath = @"C:\side\pixies-nft\assets\blank.png";
             string rawfilename = "";
 
-            for (int counter = 0; counter < 3000; counter++)
+            for (int counter = 0; counter < 53; counter++)
             {
                 int finalTier = 3;
                 int tier2Count = 0;
@@ -65,13 +66,18 @@ namespace pixies_nft_console
                 rawfilename += System.IO.Path.GetFileNameWithoutExtension(bgpath);
 
                 bool isLayer9Happen = false;
+                bool isLayer11Happen = false;
                 bool isLayer12Happen = false;
-
+                
                 using (Image<Rgba32> grid = (Image<Rgba32>)Image.Load(bgpath))
                 {
+                    Image<Rgba32> blankgrid = (Image<Rgba32>)Image.Load(blankfilePath);
+
                     for (int i = 1; i < 15; i++)
                     {
-                        if (i == 14 && isLayer12Happen)
+                        if (i == 12 && isLayer11Happen)
+                            continue;
+                        if (i == 14 && (isLayer11Happen || isLayer12Happen))
                             continue;
                         if ((i == 11 || i == 12) && isLayer9Happen)
                             continue;
@@ -119,6 +125,19 @@ namespace pixies_nft_console
                             else
                                 isLayer9Happen = false;
                         }
+                        if (i == 11 && tier == 1)
+                        {
+                            if (tier == 1)
+                            {
+                                isLayer11Happen = true;
+                                isLayer12Happen = false;
+                            }
+                            else
+                            {
+                                isLayer11Happen = false;
+                                isLayer12Happen = true;
+                            }
+                        }
                         if (i == 12 && tier == 1)
                         {
                             if (tier == 1)
@@ -135,6 +154,9 @@ namespace pixies_nft_console
 
                             Image<Rgba32> layer = (Image<Rgba32>)Image.Load(layerPath);
                             grid.Mutate(ctx => ctx
+                                .DrawImage((layer), new Point(0, 0), 1f)
+                            );
+                            blankgrid.Mutate(ctx => ctx
                                 .DrawImage((layer), new Point(0, 0), 1f)
                             );
                             layer.Dispose();
@@ -163,7 +185,9 @@ namespace pixies_nft_console
                     string resultingFileName = GetHashString(rawfilename);
                     System.Console.WriteLine("Generating file: 0x" + resultingFileName + ".png | " + (counter + 1));
                     grid.Save($@"C:\side\pixies-nft\result\0x{resultingFileName.ToLower()}.png");
+                    blankgrid.Save($@"C:\side\pixies-nft\result\0x{resultingFileName.ToLower()}_nobg.png");
                     grid.Dispose();
+                    blankgrid.Dispose();
 
                     using (StreamWriter w = File.AppendText(@"C:\side\pixies-nft\result\log.txt"))
                     {
