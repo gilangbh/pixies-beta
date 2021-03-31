@@ -21,15 +21,18 @@ namespace pixies_nft_console
             string directory = @"C:\side\pixies-nft\assets\";
             string blankfilePath = @"C:\side\pixies-nft\assets\blank.png";
             string rawfilename = "";
+            List<string> hashes = new List<string>();
+            int index = 0;
 
-            for (int counter = 0; counter < 53; counter++)
+            for (int counter = 0; counter < 16000; counter++)
             {
+                index++;
                 int finalTier = 3;
                 int tier2Count = 0;
                 int tier1Count = 0;
 
                 Random rnd = new Random();
-                List<string> possibleBG = new List<string>();
+                List<string> possibleAsset = new List<string>();
 
                 rawfilename = "";
 
@@ -37,8 +40,8 @@ namespace pixies_nft_console
                 int seed = rnd.Next(0, 100);
                 if (seed < 10)
                 {
-                    possibleBG = Directory.GetFiles($@"{directory}0", "*-t1.png", SearchOption.TopDirectoryOnly).ToList();
-                    if (possibleBG.Count > 0)
+                    possibleAsset = Directory.GetFiles($@"{directory}0", "*-t1.png", SearchOption.TopDirectoryOnly).ToList();
+                    if (possibleAsset.Count > 0)
                     {
                         tier = 1;
                         tier1Count++;
@@ -49,8 +52,8 @@ namespace pixies_nft_console
                     seed = rnd.Next(0, 100);
                     if (seed < 20)
                     {
-                        possibleBG = Directory.GetFiles($@"{directory}0", "*-t2.png", SearchOption.TopDirectoryOnly).ToList();
-                        if (possibleBG.Count > 0)
+                        possibleAsset = Directory.GetFiles($@"{directory}0", "*-t2.png", SearchOption.TopDirectoryOnly).ToList();
+                        if (possibleAsset.Count > 0)
                         {
                             tier = 2;
                             tier2Count++;
@@ -59,16 +62,16 @@ namespace pixies_nft_console
                 }
                 if (tier == 3)
                 {
-                    possibleBG = Directory.GetFiles($@"{directory}0", "*-t3.png", SearchOption.TopDirectoryOnly).ToList();
+                    possibleAsset = Directory.GetFiles($@"{directory}0", "*-t3.png", SearchOption.TopDirectoryOnly).ToList();
                 }
 
-                string bgpath = possibleBG.PickRandom();
+                string bgpath = possibleAsset.PickRandom();
                 rawfilename += System.IO.Path.GetFileNameWithoutExtension(bgpath);
 
                 bool isLayer9Happen = false;
                 bool isLayer11Happen = false;
                 bool isLayer12Happen = false;
-                
+
                 using (Image<Rgba32> grid = (Image<Rgba32>)Image.Load(bgpath))
                 {
                     Image<Rgba32> blankgrid = (Image<Rgba32>)Image.Load(blankfilePath);
@@ -88,13 +91,13 @@ namespace pixies_nft_console
                             if (isBoy)
                                 continue;
                         }
-                        possibleBG = new List<string>();
+                        possibleAsset = new List<string>();
                         tier = 3;
                         seed = rnd.Next(0, 100);
                         if (seed < 10)
                         {
-                            possibleBG = Directory.GetFiles($@"{directory}{i}", "*-t1.png", SearchOption.TopDirectoryOnly).ToList();
-                            if (possibleBG.Count > 0)
+                            possibleAsset = Directory.GetFiles($@"{directory}{i}", "*-t1.png", SearchOption.TopDirectoryOnly).ToList();
+                            if (possibleAsset.Count > 0)
                             {
                                 tier = 1;
                                 tier1Count++;
@@ -105,8 +108,8 @@ namespace pixies_nft_console
                             seed = rnd.Next(0, 100);
                             if (seed < 20)
                             {
-                                possibleBG = Directory.GetFiles($@"{directory}{i}", "*-t2.png", SearchOption.TopDirectoryOnly).ToList();
-                                if (possibleBG.Count > 0)
+                                possibleAsset = Directory.GetFiles($@"{directory}{i}", "*-t2.png", SearchOption.TopDirectoryOnly).ToList();
+                                if (possibleAsset.Count > 0)
                                 {
                                     tier = 2;
                                     tier2Count++;
@@ -115,7 +118,11 @@ namespace pixies_nft_console
                         }
                         if (tier == 3)
                         {
-                            possibleBG = Directory.GetFiles($@"{directory}{i}", "*-t3.png", SearchOption.TopDirectoryOnly).ToList();
+                            possibleAsset = Directory.GetFiles($@"{directory}{i}", "*-t3.png", SearchOption.TopDirectoryOnly).ToList();
+                            if(isLayer9Happen && i == 10)
+                            {
+                                possibleAsset.RemoveAll(x => x.Contains("6-t1"));
+                            }
                         }
 
                         if (i == 9 && tier == 1)
@@ -146,7 +153,7 @@ namespace pixies_nft_console
                                 isLayer12Happen = false;
                         }
 
-                        string layerPath = possibleBG.PickRandom();
+                        string layerPath = possibleAsset.PickRandom();
 
                         if (!System.IO.Path.GetFileNameWithoutExtension(layerPath).Equals("0-t3"))
                         {
@@ -163,12 +170,10 @@ namespace pixies_nft_console
                         }
                     }
 
-
-                    if (tier2Count < 2)
-                        finalTier = 3;
-                    if (tier2Count >= 2 || tier1Count == 1)
+                    finalTier = 3;
+                    if (tier2Count >= 3 || tier1Count >= 2)
                         finalTier = 2;
-                    if (tier1Count >= 2)
+                    if (tier1Count >= 3)
                         finalTier = 1;
 
                     System.Console.WriteLine($"Generating Pixie: Tier 1: {tier1Count} | Tier 2: {tier2Count} | Final Tier: {finalTier}");
@@ -182,18 +187,33 @@ namespace pixies_nft_console
                         .DrawImage((frameLayer), new Point(0, 0), 1f)
                     );
 
-                    string resultingFileName = GetHashString(rawfilename);
-                    System.Console.WriteLine("Generating file: 0x" + resultingFileName + ".png | " + (counter + 1));
-                    grid.Save($@"C:\side\pixies-nft\result\0x{resultingFileName.ToLower()}.png");
-                    blankgrid.Save($@"C:\side\pixies-nft\result\0x{resultingFileName.ToLower()}_nobg.png");
-                    grid.Dispose();
-                    blankgrid.Dispose();
 
+                    string resultingFileName = GetImagehash(grid);
+
+                    System.Console.WriteLine($"Generating file: {index}-0x" + resultingFileName + ".png | " + (index));
                     using (StreamWriter w = File.AppendText(@"C:\side\pixies-nft\result\log.txt"))
                     {
-                        Log($"Generating Pixie: Tier 1: {tier1Count} | Tier 2: {tier2Count} | Final Tier: {finalTier}", w);
-                        Log("Generating file: 0x" + resultingFileName + ".png | " + (counter + 1), w);
+                        Log($"Generating Pixie: Tier 1: {tier1Count} | Tier 2: {tier2Count} | Final Tier: {finalTier}\nGenerating Pixie: 0x" + resultingFileName + ".png | " + (index), w);
                     }
+
+                    if (!hashes.Exists(x => x.Equals(resultingFileName)))
+                    {
+                        grid.Save($@"C:\side\pixies-nft\result\tier-{finalTier}\{index}-0x{resultingFileName.ToLower()}.png");
+                        grid.Dispose();
+
+                        // blankgrid.Save($@"C:\side\pixies-nft\result\tier-{finalTier}\{index}-0x{resultingFileName.ToLower()}_nobg.png");
+                        // blankgrid.Dispose();
+                        hashes.Add(resultingFileName);
+                    }
+                    else
+                    {
+                        using (StreamWriter w = File.AppendText(@"C:\side\pixies-nft\result\log.txt"))
+                        {
+                            Log("DUPLICATE " + index, w);
+                        }
+                        index -= 1;
+                    }
+
                 }
             }
         }
@@ -211,6 +231,23 @@ namespace pixies_nft_console
             while ((line = r.ReadLine()) != null)
             {
                 Console.WriteLine(line);
+            }
+        }
+
+        public static string GetImagehash(Image<Rgba32> grid)
+        {
+            using (var ms = new MemoryStream())
+            {
+                StringBuilder sb = new StringBuilder();
+                grid.SaveAsPng(ms);
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var sha1 = SHA1.Create();
+                sha1.ComputeHash(ms.ToArray());
+                foreach (byte b in sha1.ComputeHash(ms.ToArray()))
+                    sb.Append(b.ToString("X2"));
+
+                return sb.ToString();
             }
         }
         public static string GetHashString(string inputString)
